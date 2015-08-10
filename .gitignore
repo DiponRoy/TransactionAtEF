@@ -1,0 +1,5 @@
+/EfTransaction/bin
+/EfTransaction/obj
+/packages
+/*.user
+/*.suo
