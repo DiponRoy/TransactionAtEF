@@ -3,4 +3,8 @@ Transaction samples while using entity framework
 
 # More Read: 
 
-[http://www.codeproject.com/Articles/690136/All-About-TransactionScope](http://www.codeproject.com/Articles/690136/All-About-TransactionScope)
+**Transaction:** [http://www.codeproject.com/Articles/690136/All-About-TransactionScope](http://www.codeproject.com/Articles/690136/All-About-TransactionScope)
+
+**Mock:** [http://stackoverflow.com/questions/20807668/mocking-database-transactions](http://stackoverflow.com/questions/20807668/mocking-database-transactions)
+
+https://msdn.microsoft.com/en-us/data/dn456843
