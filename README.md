@@ -7,4 +7,4 @@ Transaction samples while using entity framework
 
 **Mock:** [http://stackoverflow.com/questions/20807668/mocking-database-transactions](http://stackoverflow.com/questions/20807668/mocking-database-transactions)
 
-https://msdn.microsoft.com/en-us/data/dn456843
+**EF6:** [https://msdn.microsoft.com/en-us/data/dn456843](https://msdn.microsoft.com/en-us/data/dn456843)

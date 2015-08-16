@@ -66,11 +66,11 @@ namespace EfTransaction.Test
         }
 
         [Test]
-        public void RemoveAll_Transaction_Success()
+        public void RemoveAllStudent_Transaction_Success()
         {
             DbContext.Students.Add(new Student {Name = "Han"});
             DbContext.SaveChanges();
-            DbContext.Addresses.Add(new Address() { Description = "USA", Student = new Student(){ Name = "Ben"} });
+            DbContext.Addresses.Add(new Address() { Description = "USA", Student = new Student(){ Name = "Ben"} }); /*student with relational address witll throw error*/
             DbContext.SaveChanges();
 
             Assert.Catch<TransactionException>(() => Logic.RemoveAllStudent());

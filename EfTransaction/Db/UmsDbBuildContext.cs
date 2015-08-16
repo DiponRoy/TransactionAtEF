@@ -1,4 +1,5 @@
-﻿using System.Data.Entity;
+﻿using System.Data.Common;
+using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Linq;
 using EfTransaction.Db.Configurations;
@@ -12,6 +13,16 @@ namespace EfTransaction.Db
         public IDbSet<Address> Addresses { get; set; }
 
         public UmsDbBuildContext() : base()
+        {
+        }
+
+        public UmsDbBuildContext(string nameOrConnectionString)
+            : base(nameOrConnectionString)
+        {
+        }
+
+        public UmsDbBuildContext(DbConnection connection, bool contextOwnsConnection)
+            : base(connection, contextOwnsConnection)
         {
         }
 

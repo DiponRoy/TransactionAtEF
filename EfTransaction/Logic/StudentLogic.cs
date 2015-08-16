@@ -6,7 +6,6 @@ using System.Linq;
 using System.Transactions;
 using EfTransaction.Db;
 using EfTransaction.Model;
-using IsolationLevel = System.Transactions.IsolationLevel;
 
 namespace EfTransaction.Logic
 {
@@ -37,8 +36,9 @@ namespace EfTransaction.Logic
 
         public void AddAndSave(List<Student> students)
         {
-            /*for more options use*/
-            using (TransactionScope transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = IsolationLevel.ReadCommitted }))
+            /*read from web, for detail*/
+            using (var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
+            //or
             //using (var transaction = new TransactionScope())
             {
                 try
@@ -61,16 +61,16 @@ namespace EfTransaction.Logic
         {
             List<Student> list = DbContext.Students.OrderBy(x => x.Id).ToList();
 
-            /*just a good practice to do open/close
-             * but for multiple transection there is different way
-             */
             if (DbContext.Database.Connection.State == ConnectionState.Open)
             {
                 DbContext.Database.Connection.Close();
             }
             DbContext.Database.Connection.Open();
 
-            using (DbContextTransaction transaction = DbContext.Database.BeginTransaction())
+            /*read from web, for detail*/
+            using (DbContextTransaction transaction = DbContext.Database.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
+            //or
+            //using (DbContextTransaction transaction = DbContext.Database.BeginTransaction())
             {
                 try
                 {
