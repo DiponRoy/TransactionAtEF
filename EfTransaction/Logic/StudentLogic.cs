@@ -36,10 +36,10 @@ namespace EfTransaction.Logic
 
         public void AddAndSave(List<Student> students)
         {
-            /*read from web, for detail*/
-            using (var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
-            //or
+            /*regular*/
             //using (var transaction = new TransactionScope())
+            /*for more options check web*/
+            using (var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
             {
                 try
                 {
@@ -61,16 +61,17 @@ namespace EfTransaction.Logic
         {
             List<Student> list = DbContext.Students.OrderBy(x => x.Id).ToList();
 
-            if (DbContext.Database.Connection.State == ConnectionState.Open)
-            {
-                DbContext.Database.Connection.Close();
-            }
-            DbContext.Database.Connection.Open();
+            /*Optional: good to have*/
+            //if (DbContext.Database.Connection.State == ConnectionState.Open)
+            //{
+            //    DbContext.Database.Connection.Close();
+            //}
+            //DbContext.Database.Connection.Open();
 
-            /*read from web, for detail*/
-            using (DbContextTransaction transaction = DbContext.Database.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
-            //or
+            /*regular*/
             //using (DbContextTransaction transaction = DbContext.Database.BeginTransaction())
+            /*for more options check web*/
+            using (DbContextTransaction transaction = DbContext.Database.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
             {
                 try
                 {

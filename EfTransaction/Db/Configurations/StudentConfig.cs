@@ -13,7 +13,7 @@ namespace EfTransaction.Db.Configurations
                 .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
 
             Property(x => x.Name)
-                .HasMaxLength(10);
+                .HasMaxLength(50);
         }
     }
 }

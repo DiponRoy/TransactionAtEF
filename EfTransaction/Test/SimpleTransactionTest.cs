@@ -19,7 +19,7 @@ namespace EfTransaction.Test
         [SetUp]
         public void SetUp()
         {
-            var db = new UmsDbBuildContext();
+            var db = new UmsDbContext();
             db.Load();
 
             DbContext = db;
@@ -59,7 +59,7 @@ namespace EfTransaction.Test
             {
                 new Student {Name = "Han"},
                 new Student {Name = "Ben"},
-                new Student {Name = "My name is really to big, and could be more than length 10."} /*this will case error*/
+                new Student {Name = "My name is really to big, and could be more than length 50."} /*this will case error*/
             };
             Assert.Catch<Exception>(() => Logic.AddAndSave(students));
             Assert.AreEqual(0, DbContext.Students.Count());
@@ -76,6 +76,54 @@ namespace EfTransaction.Test
             Assert.Catch<TransactionException>(() => Logic.RemoveAllStudent());
             Assert.AreEqual(2, DbContext.Students.Count());
             Assert.AreEqual(1, DbContext.Addresses.Count());
+        }
+
+
+        [Test]
+        public void UpdateAndSave_Success()
+        {
+            var students = new List<Student>
+            {
+                new Student {Name = "Han"},
+                new Student {Name = "Ben"},
+                new Student {Name = "Dan"},
+                new Student {Name = "Mos"},
+            };
+            students.ForEach(x => { DbContext.Students.Add(x); });
+            DbContext.SaveChanges();
+
+            Assert.DoesNotThrow(() => new StudentUpdateLogic(DbContext).UpdateAndSave(students));
+            students = DbContext.Students.ToList();
+            Assert.IsNotNullOrEmpty(StudentUpdateLogic.UpdatePart);
+            Assert.IsTrue(students[0].Name.Contains(StudentUpdateLogic.UpdatePart));
+            Assert.IsTrue(students[1].Name.Contains(StudentUpdateLogic.UpdatePart));
+            Assert.IsTrue(students[2].Name.Contains(StudentUpdateLogic.UpdatePart));
+            Assert.IsTrue(students[3].Name.Contains(StudentUpdateLogic.UpdatePart));
+        }
+
+        [Test]
+        public void UpdateAndSave_Fail()
+        {
+            var students = new List<Student>
+            {
+                new Student {Name = "Han"},
+                new Student {Name = "Ben"},
+                new Student {Name = "Dan"},
+                new Student {Name = "Mos"},
+                new Student {Name = "Jeff"},
+                /*during update this will case error*/
+                new Student {Name = "49 length text, during update this will cross 50."},
+            };
+            students.ForEach(x => { DbContext.Students.Add(x); });
+            DbContext.SaveChanges();
+
+            Assert.Catch<Exception>(() => new StudentUpdateLogic(new UmsDbContext()).UpdateAndSave(students));
+            var dbStudents = new UmsDbContext().Students.ToList();
+            Assert.False(dbStudents[0].Name.Contains(StudentUpdateLogic.UpdatePart));
+            Assert.False(dbStudents[1].Name.Contains(StudentUpdateLogic.UpdatePart));
+            Assert.False(dbStudents[2].Name.Contains(StudentUpdateLogic.UpdatePart));
+            Assert.False(dbStudents[3].Name.Contains(StudentUpdateLogic.UpdatePart));
+            Assert.False(dbStudents[4].Name.Contains(StudentUpdateLogic.UpdatePart));
         }
     }
 }

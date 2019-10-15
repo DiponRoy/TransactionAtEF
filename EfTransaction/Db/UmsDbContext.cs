@@ -7,28 +7,28 @@ using EfTransaction.Model;
 
 namespace EfTransaction.Db
 {
-    public class UmsDbBuildContext : DbContext, IUmsDbContext
+    public class UmsDbContext : DbContext, IUmsDbContext
     {
         public IDbSet<Student> Students { get; set; }
         public IDbSet<Address> Addresses { get; set; }
 
-        public UmsDbBuildContext() : base()
+        public UmsDbContext() : base()
         {
         }
 
-        public UmsDbBuildContext(string nameOrConnectionString)
+        public UmsDbContext(string nameOrConnectionString)
             : base(nameOrConnectionString)
         {
         }
 
-        public UmsDbBuildContext(DbConnection connection, bool contextOwnsConnection)
+        public UmsDbContext(DbConnection connection, bool contextOwnsConnection)
             : base(connection, contextOwnsConnection)
         {
         }
 
-        static UmsDbBuildContext()
+        static UmsDbContext()
         {
-            Database.SetInitializer(new UmsDbBuildContextInitializer());
+            Database.SetInitializer(new UmsDbContextInitializer());
         }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
