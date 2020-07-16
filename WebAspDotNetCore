@@ -1,0 +1,178 @@
+using Db.Cfs;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Data.Common;
+using System.Data.SqlClient;
+using System.IO;
+
+namespace Test.Web.Api.Db
+{
+    public class TfsDb : TfsDbContext
+    {
+        public TfsDb() : base()
+        {
+        }
+
+        public TfsDb(DbContextOptions<TfsDbContext> options) : base(options)
+        {
+        }
+
+        /*throws error*/
+        //public TfsDb(DbContextOptions options) : base(options)
+        //{
+        //}
+        public TfsDb(DbContextOptions options, bool? value) : base(options)
+        {
+        }
+
+        public TfsDb(DbConnection connection) :base(connection)
+        {
+        }
+
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (Options != null)
+            {
+                return;
+            }
+
+            if (Connection != null)
+            {
+                optionsBuilder.UseSqlServer(Connection);
+                base.OnConfiguring(optionsBuilder);
+                return;
+            }
+
+            /*
+             * appsettings.json read:
+             * https://blog.bitscry.com/2017/05/30/appsettings-json-in-net-core-console-app/
+             * 
+             * share connectionstrings.json between projects:
+             * https://andrewlock.net/sharing-appsettings-json-configuration-files-between-projects-in-asp-net-core/
+             * https://stackoverflow.com/questions/35527144/how-to-get-bin-folder-in-asp-net-core-1-0
+             */
+            var builder = new ConfigurationBuilder()
+                //.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "connectionstrings.json"), optional: true)
+                .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"), optional: true);
+            IConfigurationRoot configuration = builder.Build();
+
+            //optionsBuilder.UseSqlServer(configuration.GetConnectionString("TfsDbConnection"));
+            DbConnection connection = new SqlConnection(configuration.GetConnectionString("TfsDbConnection"));
+            optionsBuilder.UseSqlServer(connection);
+            base.OnConfiguring(optionsBuilder);
+            Options = optionsBuilder.Options;
+            Connection = connection;
+        }
+
+        public override ITfsDbContext NewDbContextWithSameOptions()
+        {
+            if (Options != null)
+            {
+                return new TfsDb(Options, null);
+            }
+            if (Connection != null)
+            {
+                return new TfsDb(Connection);
+            }
+
+            throw new ArgumentNullException("Both Options and Connection is null.");
+        }
+    }
+}
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using Cfs.Admin.Web.Api.Controllers.Core;
+using Cfs.Admin.Web.Api.Data.Repo;
+using Cfs.Admin.Web.Api.Db;
+using Cfs.Admin.Web.Api.Models;
+using Db.Cfs;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Configuration;
+
+namespace Test.Web.Api.Controllers
+{
+    /// <summary>
+    /// User data
+    /// </summary>
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UserDetailController : AppApiController
+    {
+        public readonly int BatchSize = 8;
+        public ICfsDbContext Db { get; private set; }
+
+        public UserDetailController(ITfsDbContext db)
+        {
+            Db = db;
+        }
+
+        [HttpPost]
+        public void Post(UserBulkUploadModel detail)
+        {
+            int lineNumber = 0;
+            Db.ChangeTracker.AutoDetectChangesEnabled = false;
+            using (var transaction = Db.Database.BeginTransaction())
+            {
+                try
+                {
+                    /*delete data from few table*/
+
+                    /*add user and hireacy list*/
+                    int insertedRowCount = 0;
+                    var userRepo = new UserRepo(Db);
+                    var hierarchyRepo = new HierarchyRepo(Db);
+                    foreach (var item in detail.Users)
+                    {
+                        /*refresh ORM from large dataset*/
+                        ++lineNumber;
+                        ++insertedRowCount;
+                        if (insertedRowCount % BatchSize == 0)
+                        {
+                            insertedRowCount = 0;
+                            //var newDbContext = new TfsDb(options);
+                            var newDbContext = Db.NewDbContextWithSameOptions();
+                            newDbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+                            newDbContext.Database.UseTransaction(transaction.GetDbTransaction());
+                            Db = null;
+                            Db = newDbContext;
+                            userRepo = new UserRepo(Db);
+                            hierarchyRepo = new HierarchyRepo(Db);
+                        }
+                        /*user to table*/
+                        var user = item.User();
+                        user.SourceDetail = detail.SourceDetail;
+                        userRepo.Add(user);
+                        /*hireacy to table*/
+                        var hireacy = item.Hierarchy(detail.Month, detail.Year);
+                        hireacy.SourceDetail = detail.SourceDetail;
+                        hierarchyRepo.Add(hireacy);
+                        Db.SaveChanges(CurrentUserId());
+                    }
+                    lineNumber = 0;
+                    insertedRowCount = 0;
+                    userRepo = null;
+                    hierarchyRepo = null;
+
+                    /*delete data from few table*/
+
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    var errorRow = lineNumber;
+                    throw new Exception("Error at file line:" + errorRow, ex);
+                }
+            }
+        }
+    }
+}
